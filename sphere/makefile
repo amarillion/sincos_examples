@@ -5,7 +5,9 @@ all : sphere1.exe\
       sphere5.exe\
       sphere6.exe\
 
-LIBRARIES = alleg
+LIBRARIES = alleg \
+            m
+
 CC = gcc
 OPTIONS = \
         -O2\

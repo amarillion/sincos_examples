@@ -11,7 +11,8 @@ all : circ1.exe\
       circ11.exe\
       circ12.exe
 
-LIBRARIES = alleg
+LIBRARIES = alleg \
+            m
 
 #----------------------------------------------------------------------------
 CC = gcc
