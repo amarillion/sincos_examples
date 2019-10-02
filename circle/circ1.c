@@ -6,8 +6,9 @@
     All it does is draw a circle on the screen.
 */
 
-#include <allegro.h>
+#include <allegro5/allegro.h>
 #include <math.h>
+#include <stdio.h>
 
 // Make sure PI is defined.
 // MinGW has some problems with this.
@@ -15,10 +16,13 @@
 #define PI 3.1415927
 #endif
 
+#define SCREEN_W al_get_display_width(al_get_current_display())
+#define SCREEN_H al_get_display_height(al_get_current_display())
+
 void draw_circle ()
 {
     int x, y;
-    int length = 50;
+    int length = 100;
     float angle = 0.0;
     float angle_stepsize = 0.1;
 
@@ -29,40 +33,71 @@ void draw_circle ()
         x = length * cos (angle);
         y = length * sin (angle);
 
-        putpixel (screen,
+        al_put_pixel (
             x + SCREEN_W / 2, y + SCREEN_H / 2,
-            makecol (255, 255, 255));
+            al_map_rgb(255, 255, 255));
         angle += angle_stepsize;
     }
 }
 
-int main ()
+int main(int argc, char **argv)
 {
+    ALLEGRO_DISPLAY *display;
+    ALLEGRO_BITMAP *cursor;
+    ALLEGRO_MOUSE_STATE msestate;
+    ALLEGRO_KEYBOARD_STATE kbdstate;
+    int i;
+
+    (void)argc;
+    (void)argv;
+
     // initialize Allegro
-    if (allegro_init () < 0)
+    if (!al_init())
     {
-        allegro_message ("Error: Could not initialize Allegro");
+        printf("Could not init Allegro.\n");
         return -1;
     }
+
+    // initialize mouse and keyboard
+    al_install_mouse();
+    al_install_keyboard();
+
     // initialize gfx mode
-    if (set_gfx_mode (GFX_AUTODETECT, 320, 200, 0, 0) < 0)
+    display = al_create_display(640, 480);
+    if (!display)
     {
-        allegro_message ("Error: Could not set graphics mode");
+        printf("Error creating display\n");
         return -1;
     }
-    // initialize keyboard
-    install_keyboard ();
-    clear_keybuf ();
+
+    al_hide_mouse_cursor(display);
+
+    al_clear_to_color(al_map_rgb(0, 0, 0));
 
     // call the example function
-    draw_circle ();
+    draw_circle();
 
-    // wait for a user key-press
-    readkey ();
+    // display the drawing on the screen
+    al_flip_display();
 
-    // exit Allegro
-    allegro_exit ();
+    // wait for user input
+    ALLEGRO_EVENT_QUEUE *queue = al_create_event_queue();
+    al_register_event_source(queue, al_get_keyboard_event_source()); 
+    al_register_event_source(queue, al_get_display_event_source(display));
+    bool quit = false;
+    while (!quit) {
+        ALLEGRO_EVENT event;
+        al_wait_for_event(queue, &event); // Wait for and get an event.
+
+        switch (event.type) {
+            // if user presses window close button
+            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+            // if user presses any key
+            case ALLEGRO_EVENT_KEY_CHAR:
+                quit = true;
+                break;
+        }
+    }
 
     return 0;
-
-} END_OF_MAIN ();
+}

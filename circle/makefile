@@ -23,7 +23,11 @@ OPTIONS = \
         -fomit-frame-pointer\
         -s
 
-LIBS = $(addprefix -l,$(LIBRARIES))
+ALLEGRO_MODULES=allegro
+ALLEGRO_LIBS = $(addsuffix -5, $(ALLEGRO_MODULES))
+LIBS = -lm
+LIBS += `pkg-config --libs $(ALLEGRO_LIBS)`
+
 
 %exe : %o
 	$(CC) -s -o $@ $< $(LIBS)
