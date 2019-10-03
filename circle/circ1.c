@@ -19,16 +19,16 @@
 #define SCREEN_W al_get_display_width(al_get_current_display())
 #define SCREEN_H al_get_display_height(al_get_current_display())
 
-void draw_circle ()
-{
+void draw_circle () {
+
     int x, y;
     int length = 100;
     float angle = 0.0;
     float angle_stepsize = 0.1;
 
     // go through all angles from 0 to 2 * PI radians
-    while (angle < 2 * PI)
-    {
+    while (angle < 2 * PI) {
+
         // calculate x, y from a vector with known length and angle
         x = length * cos (angle);
         y = length * sin (angle);
@@ -36,56 +36,39 @@ void draw_circle ()
         al_put_pixel (
             x + SCREEN_W / 2, y + SCREEN_H / 2,
             al_map_rgb(255, 255, 255));
+        
         angle += angle_stepsize;
     }
 }
 
-int main(int argc, char **argv)
-{
-    ALLEGRO_DISPLAY *display;
-    ALLEGRO_BITMAP *cursor;
-    ALLEGRO_MOUSE_STATE msestate;
-    ALLEGRO_KEYBOARD_STATE kbdstate;
-    int i;
-
-    (void)argc;
-    (void)argv;
-
+bool init() {
     // initialize Allegro
-    if (!al_init())
-    {
+    if (!al_init()) {
         printf("Could not init Allegro.\n");
-        return -1;
+        return false;
     }
 
-    // initialize mouse and keyboard
-    al_install_mouse();
+    // initialize keyboard
     al_install_keyboard();
 
     // initialize gfx mode
-    display = al_create_display(640, 480);
-    if (!display)
-    {
+    ALLEGRO_DISPLAY *display = al_create_display(640, 480);
+    if (!display) {
         printf("Error creating display\n");
-        return -1;
+        return false;
     }
 
-    al_hide_mouse_cursor(display);
+    return true;
+}
 
-    al_clear_to_color(al_map_rgb(0, 0, 0));
+void wait_for_input() {
 
-    // call the example function
-    draw_circle();
-
-    // display the drawing on the screen
-    al_flip_display();
-
-    // wait for user input
     ALLEGRO_EVENT_QUEUE *queue = al_create_event_queue();
     al_register_event_source(queue, al_get_keyboard_event_source()); 
-    al_register_event_source(queue, al_get_display_event_source(display));
+    al_register_event_source(queue, al_get_display_event_source(al_get_current_display()));
     bool quit = false;
     while (!quit) {
+        
         ALLEGRO_EVENT event;
         al_wait_for_event(queue, &event); // Wait for and get an event.
 
@@ -98,6 +81,26 @@ int main(int argc, char **argv)
                 break;
         }
     }
+}
+
+int main(int argc, char **argv) {
+    int i;
+
+    (void)argc;
+    (void)argv;
+
+    if (!init()) return -1;
+
+    al_clear_to_color(al_map_rgb(0, 0, 0));
+
+    // call the example function
+    draw_circle();
+
+    // display the drawing on the screen
+    al_flip_display();
+
+    // wait for user input
+    wait_for_input();
 
     return 0;
 }
