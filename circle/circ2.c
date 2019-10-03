@@ -34,52 +34,34 @@ void draw_circle_fixed ()
 }
 
 
-int main(int argc, char **argv)
-{
-    ALLEGRO_DISPLAY *display;
-    ALLEGRO_BITMAP *cursor;
-    ALLEGRO_MOUSE_STATE msestate;
-    ALLEGRO_KEYBOARD_STATE kbdstate;
-    int i;
-
-    (void)argc;
-    (void)argv;
-
+bool init() {
     // initialize Allegro
-    if (!al_init())
-    {
+    if (!al_init()) {
         printf("Could not init Allegro.\n");
-        return -1;
+        return false;
     }
 
-    // initialize mouse and keyboard
-    al_install_mouse();
+    // initialize keyboard
     al_install_keyboard();
 
     // initialize gfx mode
-    display = al_create_display(640, 480);
-    if (!display)
-    {
+    ALLEGRO_DISPLAY *display = al_create_display(640, 480);
+    if (!display) {
         printf("Error creating display\n");
-        return -1;
+        return false;
     }
 
-    al_hide_mouse_cursor(display);
+    return true;
+}
 
-    al_clear_to_color(al_map_rgb(0, 0, 0));
+void wait_for_input() {
 
-    // call the example function
-    draw_circle_fixed();
-
-    // display the drawing on the screen
-    al_flip_display();
-
-    // wait for user input
     ALLEGRO_EVENT_QUEUE *queue = al_create_event_queue();
     al_register_event_source(queue, al_get_keyboard_event_source()); 
-    al_register_event_source(queue, al_get_display_event_source(display));
+    al_register_event_source(queue, al_get_display_event_source(al_get_current_display()));
     bool quit = false;
     while (!quit) {
+        
         ALLEGRO_EVENT event;
         al_wait_for_event(queue, &event); // Wait for and get an event.
 
@@ -92,6 +74,26 @@ int main(int argc, char **argv)
                 break;
         }
     }
+}
+
+int main(int argc, char **argv) {
+    int i;
+
+    (void)argc;
+    (void)argv;
+
+    if (!init()) return -1;
+
+    al_clear_to_color(al_map_rgb(0, 0, 0));
+
+    // call the example function
+    draw_circle_fixed();
+
+    // display the drawing on the screen
+    al_flip_display();
+
+    // wait for user input
+    wait_for_input();
 
     return 0;
 }
