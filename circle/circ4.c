@@ -7,85 +7,123 @@
     Press Esc to quit.
 */
 
-#include <allegro.h>
+#include <allegro5/allegro.h>
+#include <allegro5/allegro_primitives.h>
+
+#include <stdio.h>
+
+#define SCREEN_W al_get_display_width(al_get_current_display())
+#define SCREEN_H al_get_display_height(al_get_current_display())
 
 void racing_car ()
 {
+    ALLEGRO_TIMER *timer = al_create_timer(1.0 / 60.0);
+    ALLEGRO_EVENT_QUEUE *queue = al_create_event_queue();
+    al_start_timer(timer);
+    al_register_event_source(queue, al_get_timer_event_source(timer)); 
+    al_register_event_source(queue, al_get_display_event_source(al_get_current_display()));
+
     // length and angle of the racing car's velocity vector
-    fixed angle = itofix (0);
-    fixed length = itofix (0);
+    al_fixed angle = al_itofix (0);
+    al_fixed length = al_itofix (0);
     // x- and y-coordinates of the velocity vector
-    fixed vel_x, vel_y;
+    al_fixed vel_x, vel_y;
 
     // x- and y-position of the racing car
-    fixed x = itofix (SCREEN_W / 2);
-    fixed y = itofix (SCREEN_H / 2);
+    al_fixed x = al_itofix (SCREEN_W / 2);
+    al_fixed y = al_itofix (SCREEN_H / 2);
 
-    while (!key[KEY_ESC])
-    {
+    bool quit = false;
+    while (!quit) {
+        ALLEGRO_EVENT event;
+        al_wait_for_event(queue, &event); // Wait for and get an event.
+        switch (event.type) {
+            case ALLEGRO_EVENT_TIMER:
+                break;
+                // if user presses window close button
+            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+                quit = true;
+                break;
+
+        }
+
+        ALLEGRO_KEYBOARD_STATE kbdstate;
+        al_get_keyboard_state(&kbdstate);
+                
+        if(al_key_down(&kbdstate, ALLEGRO_KEY_ESCAPE)) {
+            quit = true;
+        }
+        if(al_key_down(&kbdstate, ALLEGRO_KEY_UP)) {
+            if (length < al_itofix (4)) length += al_ftofix (0.01);
+        }
+        if(al_key_down(&kbdstate, ALLEGRO_KEY_DOWN)) {
+            if (length > al_itofix (0)) length -= al_ftofix (0.01);
+        }
+        if(al_key_down(&kbdstate, ALLEGRO_KEY_LEFT)) {
+            angle = (angle - al_itofix (1)) & 0xFFFFFF;
+        }
+        if(al_key_down(&kbdstate, ALLEGRO_KEY_RIGHT)) {
+            angle = (angle + al_itofix (1)) & 0xFFFFFF;
+        }
+
         // erase the old image
-        circlefill (screen, fixtoi(x), fixtoi(y), 10, makecol (0, 0, 0));
-
-        // check the keys and move the car
-        if (key[KEY_UP] && length < itofix (2))
-            length += ftofix (0.005);
-        if (key[KEY_DOWN] && length > itofix (0))
-            length -= ftofix (0.005);
-        if (key[KEY_LEFT])
-            angle = (angle - itofix (1)) & 0xFFFFFF;
-        if (key[KEY_RIGHT])
-            angle = (angle + itofix (1)) & 0xFFFFFF;
+        al_clear_to_color(al_map_rgb(0, 0, 0));
 
         // calculate the x- and y-coordinates of the velocity vector
-        vel_x = fmul (length, fcos (angle));
-        vel_y = fmul (length, fsin (angle));
+        vel_x = al_fixmul (length, al_fixcos (angle));
+        vel_y = al_fixmul (length, al_fixsin (angle));
 
         // move the car, and make sure it stays within the screen
         x += vel_x;
-        if (x >= itofix (SCREEN_W)) x -= itofix(SCREEN_W);
-        if (x < itofix (0)) x += itofix(SCREEN_W);
+        if (x >= al_itofix (SCREEN_W)) x -= al_itofix(SCREEN_W);
+        if (x < al_itofix (0)) x += al_itofix(SCREEN_W);
         y += vel_y;
-        if (y >= itofix (SCREEN_H)) y -= itofix(SCREEN_H);
-        if (y < itofix (0)) y += itofix(SCREEN_H);
+        if (y >= al_itofix (SCREEN_H)) y -= al_itofix(SCREEN_H);
+        if (y < al_itofix (0)) y += al_itofix(SCREEN_H);
 
         // draw the racing car
-        circle (screen, fixtoi(x), fixtoi(y), 10, makecol (0, 0, 255));
-        line (screen, fixtoi(x), fixtoi(y),
-            fixtoi (x + 9 * fcos (angle)),
-            fixtoi (y + 9 * fsin (angle)),
-            makecol (255, 0, 0));
+        al_draw_circle (al_fixtoi(x), al_fixtoi(y), 10, al_map_rgb (0, 0, 255), 1.0);
+        al_draw_line (al_fixtoi(x), al_fixtoi(y),
+            al_fixtoi (x + 9 * al_fixcos (angle)),
+            al_fixtoi (y + 9 * al_fixsin (angle)),
+            al_map_rgb (255, 0, 0), 1.0);
 
-        // wait for 10 milliseconds, or else we'd go too fast
-        rest (10);
+        // display the drawing on the screen
+        al_flip_display();
     }
 }
 
-int main ()
-{
-    // initialize Allegro
-    if (allegro_init () < 0)
-    {
-        allegro_message ("Error: Could not initialize Allegro");
-        return -1;
-    }
-    // initialize gfx mode
-    if (set_gfx_mode (GFX_AUTODETECT, 320, 200, 0, 0) < 0)
-    {
-        allegro_message ("Error: Could not set graphics mode");
-        return -1;
-    }
-    // initialize keyboard
-    install_keyboard ();
-    clear_keybuf ();
 
-    install_timer ();
+bool init() {
+    // initialize Allegro
+    if (!al_init()) {
+        printf("Could not init Allegro.\n");
+        return false;
+    }
+
+    // initialize keyboard
+    al_install_keyboard();
+
+    // initialize gfx mode
+    ALLEGRO_DISPLAY *display = al_create_display(640, 480);
+    if (!display) {
+        printf("Error creating display\n");
+        return false;
+    }
+
+    return true;
+}
+
+int main(int argc, char **argv) {
+    int i;
+
+    (void)argc;
+    (void)argv;
+
+    if (!init()) return -1;
 
     // call the example function
-    racing_car ();
-
-    // exit Allegro
-    allegro_exit ();
+    racing_car();
 
     return 0;
-
-} END_OF_MAIN ();
+}

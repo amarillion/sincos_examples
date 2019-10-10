@@ -26,7 +26,7 @@ ifdef WINDOWS
 	LFLAGS += -Wl,--subsystem,windows
 	LIBS += -lallegro_monolith
 else
-	ALLEGRO_MODULES=allegro
+	ALLEGRO_MODULES=allegro allegro_primitives allegro_main 
 	ALLEGRO_LIBS = $(addsuffix -5, $(ALLEGRO_MODULES))
 	LIBS += `pkg-config --libs $(ALLEGRO_LIBS)`
 endif

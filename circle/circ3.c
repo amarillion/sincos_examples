@@ -8,57 +8,95 @@
     y-coordinate represents a point lower down on the screen.
 */
 
-#include <allegro.h>
+#include <allegro5/allegro.h>
+#include <stdio.h>
+
+#define SCREEN_W al_get_display_width(al_get_current_display())
+#define SCREEN_H al_get_display_height(al_get_current_display())
 
 void draw_sine ()
 {
-    int length = 50;
-    fixed x, y;
-    fixed angle = 0;
-    fixed angle_stepsize = itofix (5);
+    int length = 100;
+    al_fixed x, y;
+    al_fixed angle = 0;
+    al_fixed angle_stepsize = al_itofix (5);
 
-    while (fixtoi(angle) < 256)
+    while (al_fixtoi(angle) < 256)
     {
         // the angle is plotted along the x-axis
         x = angle;
         // the sine function is plotted along the y-axis
-        y = length * fsin (angle);
+        y = length * al_fixsin (angle);
 
-        putpixel (screen,
-            fixtoi (x), fixtoi (y) + SCREEN_H / 2,
-            makecol (255, 255, 255));
+        al_put_pixel (
+            al_fixtoi (x) * 2, al_fixtoi (y) + SCREEN_H / 2,
+            al_map_rgb (255, 255, 255));
 
         angle += angle_stepsize;
     }
 }
 
-int main ()
-{
+
+bool init() {
     // initialize Allegro
-    if (allegro_init () < 0)
-    {
-        allegro_message ("Error: Could not initialize Allegro");
-        return -1;
+    if (!al_init()) {
+        printf("Could not init Allegro.\n");
+        return false;
     }
-    // initialize gfx mode
-    if (set_gfx_mode (GFX_AUTODETECT, 320, 200, 0, 0) < 0)
-    {
-        allegro_message ("Error: Could not set graphics mode");
-        return -1;
-    }
+
     // initialize keyboard
-    install_keyboard ();
-    clear_keybuf ();
+    al_install_keyboard();
+
+    // initialize gfx mode
+    ALLEGRO_DISPLAY *display = al_create_display(640, 480);
+    if (!display) {
+        printf("Error creating display\n");
+        return false;
+    }
+
+    return true;
+}
+
+void wait_for_input() {
+
+    ALLEGRO_EVENT_QUEUE *queue = al_create_event_queue();
+    al_register_event_source(queue, al_get_keyboard_event_source()); 
+    al_register_event_source(queue, al_get_display_event_source(al_get_current_display()));
+    bool quit = false;
+    while (!quit) {
+        
+        ALLEGRO_EVENT event;
+        al_wait_for_event(queue, &event); // Wait for and get an event.
+
+        switch (event.type) {
+            // if user presses window close button
+            case ALLEGRO_EVENT_DISPLAY_CLOSE:
+            // if user presses any key
+            case ALLEGRO_EVENT_KEY_CHAR:
+                quit = true;
+                break;
+        }
+    }
+}
+
+int main(int argc, char **argv) {
+    int i;
+
+    (void)argc;
+    (void)argv;
+
+    if (!init()) return -1;
+
+    al_clear_to_color(al_map_rgb(0, 0, 0));
 
     // call the example function
-    draw_sine ();
+    draw_sine();
 
-    // wait for a user key-press
-    readkey ();
+    // display the drawing on the screen
+    al_flip_display();
 
-    // exit Allegro
-    allegro_exit ();
+    // wait for user input
+    wait_for_input();
 
     return 0;
-
-} END_OF_MAIN ();
+}
